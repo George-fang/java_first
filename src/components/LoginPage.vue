@@ -5,12 +5,15 @@
     <input v-model="userName"/>
     <input v-model="password"/>
     <button @click="doClick">提交</button>
+    <button v-if="msg ==='成功登录'" @click="toApp01">app01</button>
+    <button v-if="msg ==='成功登录'" @click="toApp02">app02</button>
   </main>
 </template>
 
 <script>
 
 import axios from 'axios'
+import store from "../store";
 
 export default {
   name: 'LoginPage',
@@ -34,43 +37,62 @@ export default {
       _this.n = res.data.data.n
       _this.e = res.data.data.e
     })
+
   },
   methods: {
     doClick(){
       const _this = this
-      if (this.username === null || this.password === null) {
-        alert('账号或密码不能为空');
-      }else {
-        const res = tempDoLock(this.password, {n: this.n, e: this.e});
-        console.log(this.password, this.n, this.e)
-        axios({
-          method: "post",
-          url: "http://192.168.43.67:8888/user",
-          data: {
-            "user_phone_number": this.userName,
-            "user_password": res,
-            "app_id": localStorage.getItem('app_id'),
-            "e" : this.e,
-            "n" : this.n,
-          },
-          transformRequest: [function (data) {
-            let ret = ''
-            for (let it in data) {
-              ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
-            }
-            return ret
-          }],
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+      const res = tempDoLock(_this.password, {n: _this.n, e: _this.e});
+
+      axios({
+        method: "post",
+        url: "http://192.168.43.67:8888/user",
+        data: {
+          "user_phone_number": _this.userName,
+          "user_password": res,
+          "app_id": "app01",
+          "e" : _this.e,
+          "n" : _this.n,
+        },
+        transformRequest: [function (data) {
+          let ret = ''
+          for (let it in data) {
+            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
           }
-        }).then(function (res) {
-          if (res.data.error === "true") { // 如果错了
-            _this.msg = res.data.data
-          } else {
-            localStorage.setItem('app_token', res.data.data);
+          return ret
+        }],
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }).then(function (res) {
+        console.log(res.data)
+        if (res.data.error === "true") { // 如果错了
+          _this.msg = res.data.data
+        } else {
+          _this.msg = "成功登录"
+          localStorage.setItem('app_token', res.data.data);
+          store.commit("changeLogin", {
+            app_token: localStorage.getItem("app_token"),
+            app_id: localStorage.getItem('app_id')
+          })
+          if(_this.$route.query.redirect !== null) {
+            _this.$router.push({
+              path: _this.$route.query.redirect
+            });
           }
-        })
-      }
+
+        }
+      })
+    },
+    toApp01(){
+      this.$router.push({
+        path: "/app01"
+      });
+    },
+    toApp02(){
+      this.$router.push({
+        path: "/app02"
+      });
     }
   }
 }
@@ -102,7 +124,6 @@ const fastPower = function(base, power, mod){
  * @param {e: long, n: long}} RsaKey 公钥对
  */
 const doLock = function(beforeLockStr, RsaKey){
-  console.log(beforeLockStr, RsaKey)
   let res = []
   let len = beforeLockStr.length; // 长度
   for(let i = 0; i < len; i++){
@@ -112,7 +133,7 @@ const doLock = function(beforeLockStr, RsaKey){
   return res;
 }
 
-const tempDoLock = function (beforeLockStr, RsaKey) {
+const tempDoLock = function  (beforeLockStr, RsaKey) {
   let res = ""
   let temp = doLock(beforeLockStr, RsaKey)
   for(let i = 0; i < temp.length; i++){

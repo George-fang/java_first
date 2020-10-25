@@ -1,10 +1,7 @@
 <template>
   <main>
-
     <h1>{{ msg1 }}</h1>
-    <h1>{{ city }}</h1>
-    <h1>{{ district }}</h1>
-    <h1>{{ province }}</h1>
+    <h1>{{ msg2 }}</h1>
     <button @click="doLogOut"> 退出登录</button>
   </main>
 </template>
@@ -13,14 +10,12 @@
 import axios from "axios";
 
 export default{
-  name: 'App01',
+  name: 'App02',
   data () {
     return {
       userName: "",
       msg1: "",
-      city : '',
-      district: "",
-      province: ''
+      msg2: ""
     }
   },
   methods: {
@@ -31,18 +26,19 @@ export default{
   },
   created(){
     const _this = this
-    localStorage.setItem('app_id', 'app01')
+    localStorage.setItem('app_id', 'app02')
     axios({                       //向后台验证token
       method: 'get',
-      url: 'http://192.168.43.96:8888/address',
+      url: 'http://192.168.43.96:9999/drink',
       headers: {app_token: localStorage.getItem("app_token")},
       withCredentials: false
     }).then(function (res){
-      if(res.data.hasError === false){
-          _this.msg1 = "登录app01成功"
-          _this.city = "居住地址城市是" + res.data.data.city;
-          _this.district = "居住地区是" + res.data.data.district;
-          _this.province = "居住省份是" + res.data.data.province;
+      if(res.data.error === false){
+        _this.msg1 = res.data.data.nickname + ",登录app02成功";
+        _this.msg2 = "最喜欢喝的饮料是" + res.data.data.favoriteDrinks[0].drinkName +
+                    "和" + res.data.data.favoriteDrinks[1].drinkName;
+
+
       }else{
         localStorage.removeItem("app_token")
         _this.$router.push({
